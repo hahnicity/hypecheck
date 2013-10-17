@@ -1,6 +1,6 @@
 // The ideas in this code and the load balancer are taken from
 // http://concur.rspace.googlecode.com/hg/talk/concur.html#slide-51
-package discern
+package hypecheck
 
 import "container/heap"
 
@@ -12,7 +12,7 @@ type Worker struct {
 
 func (w *Worker) work(done chan *Worker) {
     req := <- w.requests
-    req.Resp <- req.Execute()
+    req.Response <- req.Execute()
     done <- w
     return
 }
@@ -49,7 +49,7 @@ type Balancer struct {
     done chan *Worker
 }
 
-func (b *Balancer) Balance(work chan WikiRequest) {
+func (b *Balancer) Balance(work chan Request) {
     for {
         select {
         case req := <-work: // received a Request...
@@ -67,7 +67,7 @@ func (b *Balancer) completed(w *Worker) {
 }
 
 // Pull a worker off the heap, and send it to work
-func (b *Balancer) dispatch(req WikiRequest) {
+func (b *Balancer) dispatch(req Request) {
     w := heap.Pop(b.Pool).(*Worker)
     go w.work(b.done) // tell the task to get to work
     w.requests <- req  // send it to the task
@@ -84,7 +84,7 @@ func MakeBalancer(n int) *Balancer {
 func makePool(n int) *Pool {
     p := new(Pool)
     for i := 0; i < n; i++ {
-        requests := make(chan WikiRequest)
+        requests := make(chan Request)
         p.Push(&Worker{requests, i})
     }
     return p

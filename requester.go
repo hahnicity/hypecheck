@@ -1,4 +1,4 @@
-package discern
+package hypecheck
 
 type Requester struct {
     // The number of active requests that are being run with wikipedia
@@ -36,12 +36,12 @@ func NewRequester(closeRequests bool, maxRequests int, year string) (r *Requeste
 // people are viewing their pages
 func (r *Requester) MakeRequests(companies map[string]string) {
     c := make(chan *Response)
-    for symbol, page := range companies {
+    for symbol, _ := range companies {
         r.activeRequests++
-        r.Work <- makeWikiRequest(r.year, page, symbol, r.closeRequests, c)
+        r.Work <- *NewRequest(symbol, nil)
         r.manageActiveProc(c)
     }
-    r.waitToFinish(companies)
+    r.waitToFinish(c, companies)
 }
 
 // Throttle number of active requests stats.grok.se is the problem here
@@ -54,7 +54,7 @@ func (r *Requester) manageActiveProc(c chan *Response) {
 }
 
 // Wait for all requests to finish
-func (r *Requester) waitToFinish(companies map[string]string) {
+func (r *Requester) waitToFinish(c chan *Response, companies map[string]string) {
     for len(r.allResponses) < len(companies) {
         r.allResponses = append(r.allResponses, <-c)
     }
