@@ -3,7 +3,8 @@
 package hypecheck
 
 import "container/heap"
-
+// XXX DEBUG
+import "fmt"
 
 type Worker struct {
     requests chan Request
@@ -12,12 +13,26 @@ type Worker struct {
 
 func (w *Worker) work(done chan *Worker) {
     req := <- w.requests
-    req.Response <- req.Execute()
+    fmt.Println("RECEIVED REQUEST")
+    resp := req.Execute()
+    fmt.Println("RESPONSE CHANNEL", req.Response)
+    req.Response <- resp
+    //req.Response <- req.Execute()
     done <- w
     return
 }
 
 type Pool []*Worker
+
+// Make the pool of workers
+func makePool(n int) (p *Pool) {
+    p = new(Pool)
+    for i := 0; i < n; i++ {
+        requests := make(chan Request)
+        p.Push(&Worker{requests, i})
+    }
+    return
+}
 
 func (p Pool) Len() int { 
     return len(p) 
@@ -49,6 +64,13 @@ type Balancer struct {
     done chan *Worker
 }
 
+// Constructor method for the Load Balancer
+func NewBalancer(n int) (b *Balancer) {
+    b = &Balancer{makePool(n), make(chan *Worker)}
+    heap.Init(b.Pool) //initialize the pool
+    return
+}
+
 func (b *Balancer) Balance(work chan Request) {
     for {
         select {
@@ -71,21 +93,4 @@ func (b *Balancer) dispatch(req Request) {
     w := heap.Pop(b.Pool).(*Worker)
     go w.work(b.done) // tell the task to get to work
     w.requests <- req  // send it to the task
-}
-
-// Constructor method for the Load Balancer
-func MakeBalancer(n int) *Balancer {
-    b := &Balancer{makePool(n), make(chan *Worker)}
-    heap.Init(b.Pool) //initialize the pool
-    return b
-}
-
-// Make the pool of workers
-func makePool(n int) *Pool {
-    p := new(Pool)
-    for i := 0; i < n; i++ {
-        requests := make(chan Request)
-        p.Push(&Worker{requests, i})
-    }
-    return p
 }

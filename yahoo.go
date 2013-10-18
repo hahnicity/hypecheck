@@ -51,7 +51,7 @@ type Request struct {
     Symbol   string
 }
 
-func NewRequest(symbol string, values map[string]interface{}) (r *Request) {
+func NewRequest(c chan *Response, symbol string, values map[string]interface{}) (r *Request) {
     r = new(Request)
     r.Response = make(chan *Response)
     r.Symbol = symbol
@@ -67,7 +67,6 @@ func NewRequest(symbol string, values map[string]interface{}) (r *Request) {
 func (r *Request) Execute() (resp *Response) {
     resp = new(Response)
     url := stringit.Format(config.BaseUrl, r.Symbol, r.Options.Values.Encode())
-    fmt.Println("URL ", url)
     response, err := http.Get(url)
     if err != nil {
         panic(err)
@@ -79,6 +78,7 @@ func (r *Request) Execute() (resp *Response) {
     }
     resp.Stock = r.parse(sanitize(body))
     resp.Symbol = r.Symbol
+    fmt.Println("SETTING STUFF")
     return
 }
 
