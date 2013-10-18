@@ -30,28 +30,18 @@ func (o *Options) Add(name string, value interface{}) {
 }
 
 type Response struct {
-    Stock Stock
+    Stock  []Stock
+    Symbol string
 }
 
 type Stock struct {
-    Ticker      string  // Stock ticker.
-    LastTrade   string  // l1: last trade.
-    Change      string  // c6: change real time.
-    ChangePct   string  // k2: percent change real time.
-    Open        string  // o: market open price.
-    Low         string  // g: day's low.
-    High        string  // h: day's high.
-    Low52       string  // j: 52-weeks low.
-    High52      string  // k: 52-weeks high.
-    Volume      string  // v: volume.
-    AvgVolume   string  // a2: average volume.
-    PeRatio     string  // r2: P/E ration real time.
-    PeRatioX    string  // r: P/E ration (fallback when real time is N/A).
-    Dividend    string  // d: dividend.
-    Yield       string  // y: dividend yield.
-    MarketCap   string  // j3: market cap real time.
-    MarketCapX  string  // j1: market cap (fallback when real time is N/A).
-    Advancing   bool    // True when change is >= $0.
+    Date        string 
+    Open        string  // market open price.
+    High        string  // day's high.
+    Low         string  // day's low.
+    Close       string  // closing price
+    Volume      string  // volume.
+    Adj         string  // closing price adjusted for inflation and other junk
 }
 
 type Request struct {
@@ -65,17 +55,18 @@ func NewRequest(symbol string, values map[string]interface{}) (r *Request) {
     r.Response = make(chan *Response)
     r.Symbol = symbol
     r.Options = NewOptions()
-    r.Options.Add("s", symbol)
     for k, v := range values {
         r.Options.Add(k, v)    
     }
     return
 }
 
-// Execute the request. Save the csv with the same name as the symbol we are looking up
+// Execute the request to the Yahoo finance API. Get the necessary data and then return it
+// to the requester object so it can be processed
 func (r *Request) Execute() (resp *Response) {
     resp = new(Response)
-    url := stringit.Format(config.BaseUrl, r.Options.Values.Encode())
+    url := stringit.Format(config.BaseUrl, r.Symbol, r.Options.Values.Encode())
+    fmt.Println("URL ", url)
     response, err := http.Get(url)
     if err != nil {
         panic(err)
@@ -85,51 +76,25 @@ func (r *Request) Execute() (resp *Response) {
     if err != nil {
         panic(err)
     }
-    resp.Stock = r.parse(body)
+    resp.Stock = r.parse(sanitize(body))
+    resp.Symbol = r.Symbol
     return
 }
 
 // Use reflection to parse and assign the quotes data fetched using the Yahoo
 // market API.
-func (r *Request) parse(body []byte) (stock Stock) {
-    lines := bytes.Split(body, []byte{'\n'})[0:1]
-    stocks := make([]Stock, 1)
-    //
-    // Get the total number of fields in the Stock struct. Skip the last
-    // Advanicing field which is not fetched.
-    //
-    fieldsCount := reflect.ValueOf(stocks[0]).NumField() - 1
-    //
+func (r *Request) parse(body []byte) (stocks []Stock) {
+    lines := bytes.Split(body, []byte{'\n'})[1:] // Cut off the header
+    stocks = make([]Stock, len(lines))
+    fieldsCount := reflect.ValueOf(stocks[0]).NumField()
     // Split each line into columns, then iterate over the Stock struct
     // fields to assign column values.
-    //
     for i, line := range lines {
         columns := bytes.Split(bytes.TrimSpace(line), []byte{','})
-        fmt.Println("LINES ", lines)
-        fmt.Println("STOCKS ", stocks)
-        fmt.Println("COLUMNS ", columns, " ", len(columns))
-        fmt.Println("FIELDS ", fieldsCount)
         for j := 0; j < fieldsCount; j++ {
-            // ex. quotes.stocks[i].Ticker = string(columns[0])
             reflect.ValueOf(&stocks[i]).Elem().Field(j).SetString(string(columns[j]))
         }
-        //
-        // Try realtime value and revert to the last known if the
-        // realtime is not available.
-        //
-        if stocks[i].PeRatio == `N/A` && stocks[i].PeRatioX != `N/A` {
-            stocks[i].PeRatio = stocks[i].PeRatioX
-        }
-        if stocks[i].MarketCap == `N/A` && stocks[i].MarketCapX != `N/A` {
-            stocks[i].MarketCap = stocks[i].MarketCapX
-        }
-        //
-        // Stock is advancing if the change is not negative (i.e. $0.00
-        // is also "advancing").
-        //
-        stocks[i].Advancing = (stocks[i].Change[0:1] != `-`)
     }
-    stock = stocks[0]
     return 
 }
 
