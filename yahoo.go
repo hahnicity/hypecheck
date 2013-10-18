@@ -13,6 +13,7 @@ import (
     "net/http"
     "net/url"
     "reflect"
+    "strconv"
 )
 
 type Options struct {
@@ -36,12 +37,12 @@ type Response struct {
 
 type Stock struct {
     Date        string 
-    Open        string  // market open price.
-    High        string  // day's high.
-    Low         string  // day's low.
-    Close       string  // closing price
-    Volume      string  // volume.
-    Adj         string  // closing price adjusted for inflation and other junk
+    Open        float64  // market open price.
+    High        float64  // day's high.
+    Low         float64  // day's low.
+    Close       float64  // closing price
+    Volume      int      // volume.
+    Adj         float64  // closing price adjusted for inflation and other junk
 }
 
 type Request struct {
@@ -92,7 +93,22 @@ func (r *Request) parse(body []byte) (stocks []Stock) {
     for i, line := range lines {
         columns := bytes.Split(bytes.TrimSpace(line), []byte{','})
         for j := 0; j < fieldsCount; j++ {
-            reflect.ValueOf(&stocks[i]).Elem().Field(j).SetString(string(columns[j]))
+            switch reflect.TypeOf(&stocks[i]).Elem().Field(j).Type.String() {
+            case "string":
+                reflect.ValueOf(&stocks[i]).Elem().Field(j).SetString(string(columns[j]))
+            case "float64":
+                f, err := strconv.ParseFloat(string(columns[j]), 64)
+                if err != nil {
+                    panic(err)    
+                }
+                reflect.ValueOf(&stocks[i]).Elem().Field(j).SetFloat(f)
+            case "int":
+                x, err := strconv.ParseInt(string(columns[j]), 10, 64)
+                if err != nil {
+                    panic(err)    
+                }
+                reflect.ValueOf(&stocks[i]).Elem().Field(j).SetInt(x)
+            }
         }
     }
     return 
