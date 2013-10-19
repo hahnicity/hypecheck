@@ -2,7 +2,8 @@ package hypecheck
 
 import (
     "fmt"
-    "github.com/hahnicity/go-stringit"
+    //"github.com/hahnicity/go-stringit"
+    "github.com/VividCortex/gohistogram"
     "math"
 )
 
@@ -26,11 +27,17 @@ func NewAnalyzer(days int, threshold float64) *Analyzer {
 func (a *Analyzer) AnalyzeStock(resp *Response) {
     ois := a.findLargePriceSwings(resp)
     a.findReturnsAfterSwing(&ois, resp)
+    filterNullRets(&ois)
+    nh := gohistogram.NewHistogram(20)
     fmt.Println("Symbol: ", resp.Symbol)
     for _, oi := range ois {
-        fmt.Println(stringit.Format(
-            "\tDate: {}, Dif: {}, Later: {}", oi.Stock.Date, oi.Swing, oi.Ret,
-        ))    
+        nh.Add(oi.Ret)
+        //fmt.Println(stringit.Format(
+        //    "\tDate: {}, Dif: {}, Later: {}", oi.Stock.Date, oi.Swing, oi.Ret,
+        //))    
+    }
+    for i := 1; i < 10; i++ {
+        fmt.Println("\t.", i, " Quantile:", nh.Quantile(float64(i) * 0.1))
     }
 }
 
@@ -69,3 +76,12 @@ func (a *Analyzer) findReturnsAfterSwing(ois *[]OfInterest, resp *Response) {
     return 
 }
 
+/* ----------------------------------------------------------------------------- */
+func filterNullRets (ois *[]OfInterest) {
+    for i, oi := range *ois {
+        if oi.Ret == 0.0 {
+            *ois = (*ois)[:i]
+            break
+        }
+    }    
+}
