@@ -2,8 +2,7 @@ package hypecheck
 
 import (
     "fmt"
-    //"github.com/hahnicity/go-stringit"
-    "github.com/VividCortex/gohistogram"
+ //   "github.com/hahnicity/go-stringit"
     "math"
 )
 
@@ -19,26 +18,24 @@ type Analyzer struct {
     threshold float64
 }
 
+func AnalyzeAllResponses(a *Analyzer, ar []*Response) {
+    for _, resp := range ar {
+        for _, oi := range a.AnalyzeStock(resp) {
+            fmt.Println(oi.Ret)
+        }
+    }
+}
+ 
 func NewAnalyzer(days int, threshold float64) *Analyzer {
     return &Analyzer{days, threshold}
 }
 
 // Analyze the stock data
-func (a *Analyzer) AnalyzeStock(resp *Response) {
-    ois := a.findLargePriceSwings(resp)
+func (a *Analyzer) AnalyzeStock(resp *Response) (ois []OfInterest) {
+    ois = a.findLargePriceSwings(resp)
     a.findReturnsAfterSwing(&ois, resp)
     filterNullRets(&ois)
-    nh := gohistogram.NewHistogram(20)
-    fmt.Println("Symbol: ", resp.Symbol)
-    for _, oi := range ois {
-        nh.Add(oi.Ret)
-        //fmt.Println(stringit.Format(
-        //    "\tDate: {}, Dif: {}, Later: {}", oi.Stock.Date, oi.Swing, oi.Ret,
-        //))    
-    }
-    for i := 1; i < 10; i++ {
-        fmt.Println("\t.", i, " Quantile:", nh.Quantile(float64(i) * 0.1))
-    }
+    return
 }
 
 // Find the dates after which a large price swing (denoted by the threshold variable)
@@ -61,12 +58,7 @@ func (a *Analyzer) findLargePriceSwings(resp *Response) (ois []OfInterest) {
 // has occurred
 func (a *Analyzer) findReturnsAfterSwing(ois *[]OfInterest, resp *Response) {
     defer func() {
-        if r := recover(); r != nil {
-            err, ok := r.(error)
-            if ok {
-                fmt.Println("An Error occurred but the program recovered. Error: ", err)    
-            }    
-        }     
+        if r := recover(); r != nil {}     
     }()
     for i, oi := range *ois {
         ret := (resp.Stock[oi.Index + a.days].Adj - oi.Stock.Adj) / oi.Stock.Adj

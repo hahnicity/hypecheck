@@ -50,9 +50,7 @@ func (r *Requester) MakeRequests(companies []string) {
         }
     }
     r.waitToFinish(c, companies)
-    for _, resp := range r.allResponses {
-        r.a.AnalyzeStock(resp)    
-    }
+    AnalyzeAllResponses(r.a, r.allResponses)
 }
 
 // Throttle number of active requests if we are at the number of requests

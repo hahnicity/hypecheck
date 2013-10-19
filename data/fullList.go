@@ -2,7 +2,7 @@
 package data
 
 
-var FULL_LIST = []string{
+var FULLLIST = []string{
     "FLWS",
 	"FCTY",
 	"FCCY",
@@ -103,7 +103,6 @@ var FULL_LIST = []string{
 	"AMRN",
 	"AMZN",
 	"AMBC",
-	"AMBCW",
 	"AMBA",
 	"EPAX",
 	"AMBT",

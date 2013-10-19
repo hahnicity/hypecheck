@@ -6,6 +6,7 @@ package hypecheck
 
 import (
     "bytes"
+    "fmt"
     "github.com/hahnicity/go-stringit"
     "github.com/hahnicity/hypecheck/config"
     "io/ioutil"
@@ -91,25 +92,34 @@ func (r *Request) parse(body []byte) (stocks []Stock) {
     for i, line := range lines {
         columns := bytes.Split(bytes.TrimSpace(line), []byte{','})
         for j := 0; j < fieldsCount; j++ {
-            switch reflect.TypeOf(&stocks[i]).Elem().Field(j).Type.String() {
-            case "string":
-                reflect.ValueOf(&stocks[i]).Elem().Field(j).SetString(string(columns[j]))
-            case "float64":
-                f, err := strconv.ParseFloat(string(columns[j]), 64)
-                if err != nil {
-                    panic(err)    
-                }
-                reflect.ValueOf(&stocks[i]).Elem().Field(j).SetFloat(f)
-            case "int":
-                x, err := strconv.ParseInt(string(columns[j]), 10, 64)
-                if err != nil {
-                    panic(err)    
-                }
-                reflect.ValueOf(&stocks[i]).Elem().Field(j).SetInt(x)
-            }
+            r.convStrings(columns, i, j, &stocks)
         }
     }
     return 
+}
+
+func (r *Request) convStrings(columns[][]byte, i, j int, stocks *[]Stock) {
+    defer func() {
+        if re := recover(); re != nil {
+            fmt.Println(r.Symbol)    
+        } 
+    }()
+    switch reflect.TypeOf(&(*stocks)[i]).Elem().Field(j).Type.String() {
+    case "string":
+        reflect.ValueOf(&(*stocks)[i]).Elem().Field(j).SetString(string(columns[j]))
+    case "float64":
+        f, err := strconv.ParseFloat(string(columns[j]), 64)
+        if err != nil {
+            panic(err)    
+        }
+        reflect.ValueOf(&(*stocks)[i]).Elem().Field(j).SetFloat(f)
+    case "int":
+        x, err := strconv.ParseInt(string(columns[j]), 10, 64)
+        if err != nil {
+            panic(err)    
+        }
+        reflect.ValueOf(&(*stocks)[i]).Elem().Field(j).SetInt(x)
+    }
 }
 
 //-----------------------------------------------------------------------------
