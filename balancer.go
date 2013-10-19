@@ -3,8 +3,6 @@
 package hypecheck
 
 import "container/heap"
-// XXX DEBUG
-import "fmt"
 
 type Worker struct {
     requests chan Request
@@ -13,11 +11,7 @@ type Worker struct {
 
 func (w *Worker) work(done chan *Worker) {
     req := <- w.requests
-    fmt.Println("RECEIVED REQUEST")
-    resp := req.Execute()
-    fmt.Println("RESPONSE CHANNEL", req.Response)
-    req.Response <- resp
-    //req.Response <- req.Execute()
+    req.Response <- req.Execute()
     done <- w
     return
 }

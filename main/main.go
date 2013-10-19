@@ -7,9 +7,10 @@ import (
 )
 
 var (
-    days        int
-    maxRequests int
-    threshold   float64
+    days         int
+    maxRequests  int
+    requestDelay int
+    threshold    float64
 )
 
 func parseArgs() {
@@ -25,6 +26,12 @@ func parseArgs() {
         100,
         "The maximum number of requests we can make to yahoo at once",
     )
+    flag.IntVar(
+        &requestDelay,
+        "d",
+        100,
+        "The time to wait between for a new request to be executed after one is made",
+    )
     flag.Float64Var(
         &threshold,
         "threshold",
@@ -36,7 +43,7 @@ func parseArgs() {
 
 func main() {
     parseArgs()
-    r := hypecheck.NewRequester(maxRequests) 
+    r := hypecheck.NewRequester(maxRequests, requestDelay) 
     go hypecheck.NewBalancer(maxRequests).Balance(r.Work)
     r.MakeRequests(data.TESTLIST)
 }

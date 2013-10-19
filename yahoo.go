@@ -6,7 +6,6 @@ package hypecheck
 
 import (
     "bytes"
-    "fmt"
     "github.com/hahnicity/go-stringit"
     "github.com/hahnicity/hypecheck/config"
     "io/ioutil"
@@ -53,7 +52,7 @@ type Request struct {
 
 func NewRequest(c chan *Response, symbol string, values map[string]interface{}) (r *Request) {
     r = new(Request)
-    r.Response = make(chan *Response)
+    r.Response = c
     r.Symbol = symbol
     r.Options = NewOptions()
     for k, v := range values {
@@ -78,7 +77,6 @@ func (r *Request) Execute() (resp *Response) {
     }
     resp.Stock = r.parse(sanitize(body))
     resp.Symbol = r.Symbol
-    fmt.Println("SETTING STUFF")
     return
 }
 

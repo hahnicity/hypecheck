@@ -1,7 +1,6 @@
 package hypecheck
 
-// XXX DEBUG
-import "fmt"
+import "time"
 
 
 type Requester struct {
@@ -13,16 +12,20 @@ type Requester struct {
 
     // The maximum number of requests that can be run concurrently
     maxRequests    int
+    
+    // The delay in milliseconds between each request
+    requestDelay   time.Duration
 
     // Channel of active work
     Work           chan Request
 }
 
 // Make a new Requester object. 
-func NewRequester(maxRequests int) (r *Requester){
+func NewRequester(maxRequests, requestDelay int) (r *Requester){
     r = new(Requester)    
     r.activeRequests = 0
     r.maxRequests = maxRequests
+    r.requestDelay = time.Duration(requestDelay) * time.Millisecond
     r.Work = make(chan Request)
     return
 }
@@ -34,28 +37,32 @@ func (r *Requester) MakeRequests(companies []string) {
     c := make(chan *Response)
     for _, symbol := range companies {
         r.activeRequests++
-        fmt.Println("MAKE NEW REQUEST")
-        fmt.Println("CHANNEL", c)
         r.Work <- *NewRequest(c, symbol, nil)
-        r.manageActiveProc(c)
+        // If we need to wait for a request to finish do not implement an additional delay
+        if r.manageActiveProc(c) {
+            continue    
+        } else {
+            time.Sleep(r.requestDelay)       
+        }
     }
     r.waitToFinish(c, companies)
 }
 
-// Throttle number of active requests stats.grok.se is the problem here
-func (r *Requester) manageActiveProc(c chan *Response) {
+// Throttle number of active requests if we are at the number of requests
+// that we have allowed to run concurrently
+func (r *Requester) manageActiveProc(c chan *Response) bool {
     if r.activeRequests == r.maxRequests {
         resp := <- c
         r.allResponses = append(r.allResponses, resp)
         r.activeRequests--
+        return true
     }
+    return false
 }
 
 // Wait for all requests to finish
 func (r *Requester) waitToFinish(c chan *Response, companies []string) {
-    fmt.Println("WAITING TO FINISH")
     for len(r.allResponses) < len(companies) {
-        fmt.Println("ALL RESPONSES ", r.allResponses)
         r.allResponses = append(r.allResponses, <-c)
     }
 }
