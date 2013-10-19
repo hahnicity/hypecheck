@@ -43,7 +43,8 @@ func parseArgs() {
 
 func main() {
     parseArgs()
-    r := hypecheck.NewRequester(maxRequests, requestDelay) 
+    a := hypecheck.NewAnalyzer(days, threshold)
+    r := hypecheck.NewRequester(a, maxRequests, requestDelay) 
     go hypecheck.NewBalancer(maxRequests).Balance(r.Work)
     r.MakeRequests(data.TESTLIST)
 }

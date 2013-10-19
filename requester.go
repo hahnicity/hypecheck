@@ -4,6 +4,9 @@ import "time"
 
 
 type Requester struct {
+    // The analyzer struct we will use to analyze data on the requests
+    a              *Analyzer
+
     // The number of active requests that are being run with wikipedia
     activeRequests int
 
@@ -21,8 +24,9 @@ type Requester struct {
 }
 
 // Make a new Requester object. 
-func NewRequester(maxRequests, requestDelay int) (r *Requester){
-    r = new(Requester)    
+func NewRequester(a *Analyzer, maxRequests, requestDelay int) (r *Requester){
+    r = new(Requester)
+    r.a = a
     r.activeRequests = 0
     r.maxRequests = maxRequests
     r.requestDelay = time.Duration(requestDelay) * time.Millisecond
@@ -46,6 +50,9 @@ func (r *Requester) MakeRequests(companies []string) {
         }
     }
     r.waitToFinish(c, companies)
+    for _, resp := range r.allResponses {
+        r.a.AnalyzeStock(resp)    
+    }
 }
 
 // Throttle number of active requests if we are at the number of requests
@@ -65,4 +72,5 @@ func (r *Requester) waitToFinish(c chan *Response, companies []string) {
     for len(r.allResponses) < len(companies) {
         r.allResponses = append(r.allResponses, <-c)
     }
+    close(c)
 }
