@@ -2,6 +2,7 @@ package hypecheck
 
 import (
     "fmt"
+    "github.com/grd/histogram"
  //   "github.com/hahnicity/go-stringit"
     "math"
 )
@@ -19,11 +20,18 @@ type Analyzer struct {
 }
 
 func AnalyzeAllResponses(a *Analyzer, ar []*Response) {
+    Range := histogram.Range(-1.0, 200, .01)
+    h, err := histogram.NewHistogram(Range)
+    if err != nil {
+        panic(err)
+    }
     for _, resp := range ar {
         for _, oi := range a.AnalyzeStock(resp) {
-            fmt.Println(oi.Ret)
+            h.Add(oi.Ret)
         }
     }
+    fmt.Println("MEAN: ", h.Mean())
+    fmt.Println("SIGMA ", h.Sigma())
 }
  
 func NewAnalyzer(days int, threshold float64) *Analyzer {

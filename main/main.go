@@ -44,7 +44,9 @@ func parseArgs() {
 func main() {
     parseArgs()
     a := hypecheck.NewAnalyzer(days, threshold)
-    r := hypecheck.NewRequester(a, maxRequests, requestDelay) 
-    go hypecheck.NewBalancer(maxRequests).Balance(r.Work)
-    r.MakeRequests(data.MEDLIST)
+    r := hypecheck.NewRequester(a, maxRequests, requestDelay)
+    // Set number of workers to 1.1 * maxRequests to account errors in pushing workers
+    nw := maxRequests + int(.1 * float64(maxRequests))
+    go hypecheck.NewBalancer(nw).Balance(r.Work)
+    r.MakeRequests(data.FULLLIST)
 }
