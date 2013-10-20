@@ -20,3 +20,11 @@ _cgo_export.*
 _testmain.go
 
 *.exe
+
+# Annoying Files
+*.swp
+*.swo
+*.test
+*.txt
+*.text
+*.csv
