@@ -3,6 +3,9 @@
 package hypecheck
 
 import "container/heap"
+// XXX DEBUG
+import "runtime"
+
 
 type Worker struct {
     requests chan Request
@@ -13,7 +16,7 @@ func (w *Worker) work(done chan *Worker) {
     req := <- w.requests
     req.Response <- req.Execute()
     done <- w
-    return
+    runtime.Goexit()
 }
 
 type Pool []*Worker

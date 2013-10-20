@@ -66,7 +66,9 @@ func (a *Analyzer) findLargePriceSwings(resp *Response) (ois []OfInterest) {
 // has occurred
 func (a *Analyzer) findReturnsAfterSwing(ois *[]OfInterest, resp *Response) {
     defer func() {
-        if r := recover(); r != nil {}     
+        if r := recover(); r != nil {
+            return    
+        }
     }()
     for i, oi := range *ois {
         ret := (resp.Stock[oi.Index + a.days].Adj - oi.Stock.Adj) / oi.Stock.Adj

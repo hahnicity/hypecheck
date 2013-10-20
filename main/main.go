@@ -45,8 +45,6 @@ func main() {
     parseArgs()
     a := hypecheck.NewAnalyzer(days, threshold)
     r := hypecheck.NewRequester(a, maxRequests, requestDelay)
-    // Set number of workers to 1.1 * maxRequests to account errors in pushing workers
-    nw := maxRequests + int(.1 * float64(maxRequests))
-    go hypecheck.NewBalancer(nw).Balance(r.Work)
+    go hypecheck.NewBalancer(2500).Balance(r.Work) // XXX There is a bug with push
     r.MakeRequests(data.FULLLIST)
 }

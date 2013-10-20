@@ -71,4 +71,5 @@ func (r *Requester) waitToFinish(c chan *Response, companies []string) {
         r.allResponses = append(r.allResponses, <-c)
     }
     close(c)
+    close(r.Work)
 }
