@@ -46,5 +46,5 @@ func main() {
     a := hypecheck.NewAnalyzer(days, threshold)
     r := hypecheck.NewRequester(a, maxRequests, requestDelay)
     go hypecheck.NewBalancer(2500).Balance(r.Work) // XXX There is a bug with push
-    r.MakeRequests(data.FULLLIST)
+    r.MakeRequests(data.SP500)
 }
