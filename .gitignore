@@ -28,3 +28,5 @@ _testmain.go
 *.txt
 *.text
 *.csv
+*.RData
+*.Rhistory
