@@ -6,7 +6,6 @@ package hypecheck
 
 import (
     "bytes"
-    "fmt"
     "github.com/hahnicity/go-stringit"
     "github.com/hahnicity/hypecheck/config"
     "io/ioutil"
@@ -99,11 +98,9 @@ func (r *Request) parse(body []byte) (stocks []Stock) {
 }
 
 func (r *Request) convStrings(columns[][]byte, i, j int, stocks *[]Stock) {
-    defer func() {
-        if re := recover(); re != nil {
-            fmt.Println(r.Symbol)    
-        } 
-    }()
+    // A request may not go through correctly to yahoo. So just recover. If there is
+    // something busted with the app we will see it quickly
+    defer func() { recover() }()
     switch reflect.TypeOf(&(*stocks)[i]).Elem().Field(j).Type.String() {
     case "string":
         reflect.ValueOf(&(*stocks)[i]).Elem().Field(j).SetString(string(columns[j]))

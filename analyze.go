@@ -1,10 +1,11 @@
 package hypecheck
 
 import (
+    "encoding/csv"
     "fmt"
     "github.com/grd/histogram"
- //   "github.com/hahnicity/go-stringit"
-    "math"
+    "os"
+    "strconv"
 )
 
 type OfInterest struct {
@@ -19,7 +20,14 @@ type Analyzer struct {
     threshold float64
 }
 
+// Analyze all significant dates with a histogram. But also write any significant data
+// to a csv file so we can do further processing in R
 func AnalyzeAllResponses(a *Analyzer, ar []*Response) {
+    f, err := os.Create("swing-data.csv")
+    if err != nil { panic(err) }
+    defer f.Close()
+    w := csv.NewWriter(f)
+    defer w.Flush()
     Range := histogram.Range(-1.0, 200, .01)
     h, err := histogram.NewHistogram(Range)
     if err != nil {
@@ -27,6 +35,11 @@ func AnalyzeAllResponses(a *Analyzer, ar []*Response) {
     }
     for _, resp := range ar {
         for _, oi := range a.AnalyzeStock(resp) {
+            var toWrite = []string{
+                strconv.FormatFloat(oi.Swing, 'f', 4, 64),
+                strconv.FormatFloat(oi.Ret, 'f', 4, 64),
+            }
+            w.Write(toWrite)
             h.Add(oi.Ret)
         }
     }
@@ -50,8 +63,16 @@ func (a *Analyzer) AnalyzeStock(resp *Response) (ois []OfInterest) {
 // has occurred
 func (a *Analyzer) findLargePriceSwings(resp *Response) (ois []OfInterest) {
     for i := 1; i < len(resp.Stock); i++ {
-        swing := (resp.Stock[i-1].Adj - resp.Stock[i].Adj) / resp.Stock[i].Adj
-        if math.Abs(swing) > a.threshold {
+        swing := (resp.Stock[i].Adj - resp.Stock[i-1].Adj) / resp.Stock[i-1].Adj
+        if a.threshold > 0.0 && swing > a.threshold {
+            // XXX Abstract this
+            oi := new(OfInterest)
+            oi.Index = i
+            oi.Stock = resp.Stock[i]
+            oi.Swing = swing
+            ois = append(ois, *oi)
+        } else if a.threshold < 0.0 && swing < a.threshold {
+            // XXX Abstract this
             oi := new(OfInterest)
             oi.Index = i
             oi.Stock = resp.Stock[i]
