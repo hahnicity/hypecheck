@@ -53,8 +53,9 @@ type Request struct {
 func NewRequest(c chan *Response, symbol string, values map[string]interface{}) (r *Request) {
     r = new(Request)
     r.Response = c
-    r.Symbol = symbol
     r.Options = NewOptions()
+    r.Symbol = symbol
+    r.Options.Add("s", symbol)
     for k, v := range values {
         r.Options.Add(k, v)    
     }
@@ -65,7 +66,7 @@ func NewRequest(c chan *Response, symbol string, values map[string]interface{}) 
 // to the requester object so it can be processed
 func (r *Request) Execute() (resp *Response) {
     resp = new(Response)
-    url := stringit.Format(config.BaseUrl, r.Symbol, r.Options.Values.Encode())
+    url := stringit.Format(config.BaseUrl, r.Options.Values.Encode())
     response, err := http.Get(url)
     if err != nil {
         panic(err)

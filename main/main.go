@@ -4,16 +4,24 @@ import (
     "flag"
     "github.com/hahnicity/hypecheck"
     "github.com/hahnicity/hypecheck/data"
+    "time"
 )
 
 var (
     days         int
     maxRequests  int
     requestDelay int
+    startYear    string
     threshold    float64
 )
 
 func parseArgs() {
+    flag.StringVar(
+        &startYear,
+        "year",
+        "2013",
+        "The year to begin analyzing data for",
+    )
     flag.IntVar(
         &days,
         "days",
@@ -41,10 +49,22 @@ func parseArgs() {
     flag.Parse()
 }
 
+func addURLOptions() map[string]interface{} {
+    var values = map[string]interface{}{
+        "a": 0,  // Start Month (January)
+        "b": 1,  // Start Day 
+        "c": startYear, 
+        "d": time.Now().Month()-1,
+        "e": time.Now().Day(),
+        "f": time.Now().Year(),
+    }
+    return values
+}
+
 func main() {
     parseArgs()
     a := hypecheck.NewAnalyzer(days, threshold)
     r := hypecheck.NewRequester(a, maxRequests, requestDelay)
-    go hypecheck.NewBalancer(2500).Balance(r.Work) // XXX There is a bug with push
-    r.MakeRequests(data.SP500)
+    go hypecheck.NewBalancer(600).Balance(r.Work) // XXX There is a bug with push
+    r.MakeRequests(data.SP500, addURLOptions())
 }

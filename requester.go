@@ -37,11 +37,11 @@ func NewRequester(a *Analyzer, maxRequests, requestDelay int) (r *Requester){
 // Given a map of companies and their corresponding wikipedia pages, make
 // requests to stats.grok.se so that we can get statistics as to how frequently
 // people are viewing their pages
-func (r *Requester) MakeRequests(companies []string) {
+func (r *Requester) MakeRequests(companies []string, options map[string]interface{}) {
     c := make(chan *Response)
     for _, symbol := range companies {
         r.activeRequests++
-        r.Work <- *NewRequest(c, symbol, nil)
+        r.Work <- *NewRequest(c, symbol, options)
         // If we need to wait for a request to finish do not implement an additional delay
         if r.manageActiveProc(c) {
             continue    
